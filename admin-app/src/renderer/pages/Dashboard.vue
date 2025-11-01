@@ -1,93 +1,114 @@
-<!-- File: src/renderer/pages/Dashboard.vue -->
 <template>
-  <div class="p-4">
-    <h1>Admin Dashboard</h1>
+  <div class="dashboard">
+    <header class="header">
+      <h1>🖥️ Internet Café Dashboard</h1>
+      <p>
+        Status:
+        <strong>{{ isConnected ? "🟢 Connected" : "🔴 Disconnected" }}</strong>
+      </p>
+    </header>
 
-    <div class="mt-4">
-      <button @click="fetchStatus">🔄 Refresh Server Status</button>
-      <p v-if="loading">Loading...</p>
+    <section v-if="sessions.length" class="sessions">
+      <div
+        v-for="s in sessions"
+        :key="s.id"
+        class="session-card"
+        :class="{
+          expired: s.status === 'expired',
+          locked: s.status === 'locked',
+        }"
+      >
+        <h3>PC {{ s.pcNumber }}</h3>
+        <p><strong>Status:</strong> {{ s.status }}</p>
+        <p><strong>Time Left:</strong> {{ s.timeLeft }} min</p>
 
-      <div v-if="status">
-        <p><strong>Server Port:</strong> {{ status.port }}</p>
-        <p><strong>Clients:</strong> {{ status.clients.length }}</p>
-        <p><strong>Sessions:</strong> {{ status.sessions.length }}</p>
-
-        <div v-if="status.clients.length">
-          <h3>Clients</h3>
-          <ul>
-            <li v-for="client in status.clients" :key="client.id">
-              PC {{ client.pc }} — {{ client.status }}
-            </li>
-          </ul>
-        </div>
-
-        <div v-if="status.sessions.length">
-          <h3>Sessions</h3>
-          <ul>
-            <li v-for="s in status.sessions" :key="s.id">
-              {{ s.pc }} | {{ new Date(s.startAt).toLocaleTimeString() }} →
-              {{ new Date(s.endAt).toLocaleTimeString() }}
-            </li>
-          </ul>
+        <div class="actions">
+          <button @click="addTime(s.pcNumber, 30)">+30 min</button>
+          <button @click="lockClient(s.pcNumber)">Lock</button>
+          <button @click="unlockClient(s.pcNumber)">Unlock</button>
         </div>
       </div>
-    </div>
+    </section>
 
-    <div class="mt-6">
-      <h3>Quick Test Controls</h3>
-      <input v-model.number="testPc" placeholder="PC #" type="number" />
-      <input v-model.number="testMinutes" placeholder="Minutes" type="number" />
-      <button @click="addTime">➕ Add Time</button>
-    </div>
+    <section v-else class="empty">
+      <p>No active sessions yet...</p>
+    </section>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
+import { inject, onMounted } from "vue";
+import { useSessionStore } from "../stores/sessionStore.js";
 
-const status = ref(null);
-const loading = ref(false);
-const testPc = ref(1);
-const testMinutes = ref(5);
-
-async function fetchStatus() {
-  loading.value = true;
-  try {
-    status.value = await window.adminApi.getStatus();
-  } catch (err) {
-    console.error("Failed to fetch status", err);
-  } finally {
-    loading.value = false;
-  }
-}
-
-async function addTime() {
-  const res = await window.adminApi.addTime(testPc.value, testMinutes.value);
-  console.log("AddTime Result:", res);
-  fetchStatus();
-}
+const isConnected = inject("isConnected");
+const store = useSessionStore();
+const { sessions, addTime, lockClient, unlockClient } = store;
 
 onMounted(() => {
-  window.adminApi.onEvent("backend:server_started", (data) => {
-    console.log("Server started:", data);
-  });
-  window.adminApi.onEvent("backend:client_update", (data) => {
-    console.log("Client update:", data);
-    fetchStatus();
-  });
-  window.adminApi.onEvent("backend:session_update", (data) => {
-    console.log("Session update:", data);
-    fetchStatus();
-  });
-
-  fetchStatus();
+  // ensure latest data when page opens
+  const socket = inject("socket");
+  socket.emit("getSessions");
 });
 </script>
 
 <style scoped>
+.dashboard {
+  padding: 1.5rem;
+  color: #f0f0f0;
+  background-color: #1a1a1a;
+  min-height: 100vh;
+}
+
+.header {
+  margin-bottom: 1.5rem;
+}
+
+.sessions {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+.session-card {
+  background: #242424;
+  border-radius: 12px;
+  padding: 1rem;
+  transition: background 0.3s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.session-card.expired {
+  background: #3a1d1d;
+}
+
+.session-card.locked {
+  background: #2a2a3a;
+}
+
+.actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
 button {
-  margin: 0.25rem;
-  padding: 0.5rem 1rem;
+  background: #444;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 0.4rem 0.8rem;
   cursor: pointer;
+  transition: background 0.2s;
+}
+
+button:hover {
+  background: #666;
+}
+
+.empty {
+  text-align: center;
+  opacity: 0.7;
+  font-style: italic;
+  margin-top: 2rem;
 }
 </style>
