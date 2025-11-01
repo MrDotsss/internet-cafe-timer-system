@@ -1,23 +1,26 @@
-import { app, BrowserWindow } from "electron";
+// File: src/main.js
+// Modified to start backend and forward backend events to renderer windows.
+
+import { app, BrowserWindow, ipcMain } from "electron";
 import path from "node:path";
 import started from "electron-squirrel-startup";
+import { createBackend } from "./backend/expressApp.js";
 
-// Handle creating/removing shortcuts on Windows when installing/uninstalling.
+// Early exit for Squirrel installer
 if (started) {
   app.quit();
 }
 
+let mainWindow;
 const createWindow = () => {
-  // Create the browser window.
-  const mainWindow = new BrowserWindow({
-    width: 800,
-    height: 600,
+  mainWindow = new BrowserWindow({
+    width: 1200,
+    height: 800,
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
     },
   });
 
-  // and load the index.html of the app.
   if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
     mainWindow.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL);
   } else {
@@ -26,33 +29,75 @@ const createWindow = () => {
     );
   }
 
-  // Open the DevTools.
   mainWindow.webContents.openDevTools();
 };
 
-// This method will be called when Electron has finished
-// initialization and is ready to create browser windows.
-// Some APIs can only be used after this event occurs.
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
+  // Start backend server first
+  const backend = createBackend();
+
+  // forward backend events to renderer windows
+  backend.on("started", (data) => {
+    BrowserWindow.getAllWindows().forEach((w) => {
+      w.webContents.send("backend:server_started", data);
+    });
+  });
+  backend.on("client_connected", (data) => {
+    BrowserWindow.getAllWindows().forEach((w) => {
+      w.webContents.send("backend:client_update", { type: "connected", data });
+    });
+  });
+  backend.on("client_disconnected", (data) => {
+    BrowserWindow.getAllWindows().forEach((w) => {
+      w.webContents.send("backend:client_update", {
+        type: "disconnected",
+        data,
+      });
+    });
+  });
+  backend.on("session_update", (data) => {
+    BrowserWindow.getAllWindows().forEach((w) => {
+      w.webContents.send("backend:session_update", data);
+    });
+  });
+
+  await backend.start(); // default port 3030
+
   createWindow();
 
-  // On OS X it's common to re-create a window in the app when the
-  // dock icon is clicked and there are no other windows open.
   app.on("activate", () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
-      createWindow();
+    if (BrowserWindow.getAllWindows().length === 0) createWindow();
+  });
+
+  // IPC handlers from renderer to backend
+  ipcMain.handle("admin:addTime", async (_, { pc, minutes }) => {
+    try {
+      const s = backend.addTimeToPc(pc, minutes);
+      return { ok: true, session: s };
+    } catch (err) {
+      return { ok: false, err: String(err) };
     }
+  });
+
+  ipcMain.handle("admin:controlPc", async (_, { pc, action }) => {
+    try {
+      const ok = backend.controlPc(pc, action);
+      return { ok };
+    } catch (err) {
+      return { ok: false, err: String(err) };
+    }
+  });
+
+  ipcMain.handle("admin:getStatus", async () => {
+    // lightweight snapshot
+    return {
+      clients: Array.from(backend.clients.values()),
+      sessions: Array.from(backend.sessions.values()),
+      port: backend.port,
+    };
   });
 });
 
-// Quit when all windows are closed, except on macOS. There, it's common
-// for applications and their menu bar to stay active until the user quits
-// explicitly with Cmd + Q.
 app.on("window-all-closed", () => {
-  if (process.platform !== "darwin") {
-    app.quit();
-  }
+  if (process.platform !== "darwin") app.quit();
 });
-
-// In this file you can include the rest of your app's specific main process
-// code. You can also put them in separate files and import them here.
