@@ -2,6 +2,7 @@ import config from "config";
 import { createServer } from "./server.js";
 import { initDatabase } from "../db/index.js";
 import { setupGracefulShutdown } from "./shutdown.js";
+import { startSyncLoop } from "./syncLoop.js";
 
 export async function bootstrap() {
   console.log("Starting backend...");
@@ -12,6 +13,8 @@ export async function bootstrap() {
   const { app, httpServer, io } = createServer(config);
 
   console.log("Initializing modules...");
+
+  startSyncLoop(io);
 
   const port = config.get("server.port");
   httpServer.listen(port, () => {
