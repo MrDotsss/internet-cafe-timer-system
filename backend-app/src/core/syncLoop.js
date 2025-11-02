@@ -1,5 +1,6 @@
 // src/core/syncLoop.js
 import { ClientService } from "../services/clientService.js";
+import { SocketEmit } from "../sockets/socketManager.js";
 
 export function startSyncLoop(io) {
   console.log("🔁 Sync loop started");
@@ -13,6 +14,7 @@ export function startSyncLoop(io) {
         const expiry = new Date(client.expiryUtc);
         if (expiry <= now && client.status !== "expired") {
           ClientService.updateStatus(client.id, "expired");
+          SocketEmit.clientExpired(client.id);
           io.emit("client:expired", { id: client.id });
           console.log(`⏰ PC ${client.label || client.id} expired`);
         }

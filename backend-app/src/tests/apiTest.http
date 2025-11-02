@@ -23,9 +23,9 @@ POST http://localhost:3000/api/sessions/1/extend
 Content-Type: application/json
 
 {
-  "minutes": 30,
+  "minutes": 1,
   "source": "admin",
-  "amount": 5
+  "amount": 1
 }
 
 ### Get all transactions

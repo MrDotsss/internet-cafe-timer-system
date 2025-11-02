@@ -2,6 +2,7 @@
 import { getDatabase } from "../db/database.js";
 import { TransactionService } from "./transactionService.js";
 import { ClientService } from "./clientService.js";
+import { SocketEmit } from "../sockets/socketManager.js";
 
 const db = getDatabase();
 
@@ -20,6 +21,7 @@ export const SessionService = {
       .run(pcId);
 
     const sessionId = result.lastInsertRowid;
+    SocketEmit.sessionStart(pcId);
     console.log(`🕒 Session started for PC ${pcId} (#${sessionId})`);
     return sessionId;
   },
@@ -41,6 +43,7 @@ export const SessionService = {
        WHERE id = ?`
     ).run(endTime, duration, session.id);
 
+    SocketEmit.sessionEnd(pcId);
     console.log(`🕒 Session ended for PC ${pcId}, duration ${duration}m`);
     return session.id;
   },
@@ -53,6 +56,7 @@ export const SessionService = {
     ClientService.updateExpiry(pcId, expiry.toISOString());
     TransactionService.log(pcId, null, source, amount, minutes);
 
+    SocketEmit.sessionExtend(pcId, minutes);
     console.log(`💰 Extended PC ${pcId} by ${minutes} minutes`);
   },
 

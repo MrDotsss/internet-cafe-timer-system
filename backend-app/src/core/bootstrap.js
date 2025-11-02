@@ -4,6 +4,7 @@ import { initDatabase } from "../db/index.js";
 import { setupGracefulShutdown } from "./shutdown.js";
 import { startSyncLoop } from "./syncLoop.js";
 import apiRouter from "../api/index.js";
+import { setupSocket } from "../sockets/socketManager.js";
 
 export async function bootstrap() {
   console.log("Starting backend...");
@@ -15,9 +16,10 @@ export async function bootstrap() {
 
   console.log("Initializing modules...");
 
-  app.use("/api", apiRouter);
-
+  setupSocket(io);
   startSyncLoop(io);
+
+  app.use("/api", apiRouter);
 
   const port = config.get("server.port");
   httpServer.listen(port, () => {
