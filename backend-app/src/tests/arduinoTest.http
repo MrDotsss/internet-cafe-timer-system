@@ -1,0 +1,11 @@
+### GET CURRENT CONFIG
+GET http://localhost:3000/api/arduino/config
+
+### POST A CONFIG
+POST http://localhost:3000/api/arduino/config
+Content-Type: application/json
+
+{
+  "minutesPerCoin": 6,
+  "maxPCs": 15
+}

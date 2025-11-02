@@ -5,6 +5,7 @@ import { setupGracefulShutdown } from "./shutdown.js";
 import { startSyncLoop } from "./syncLoop.js";
 import apiRouter from "../api/index.js";
 import { setupSocket } from "../sockets/socketManager.js";
+import { setupSerial, sendInitialConfig } from "./serial.js";
 
 export async function bootstrap() {
   console.log("Starting backend...");
@@ -17,6 +18,8 @@ export async function bootstrap() {
   console.log("Initializing modules...");
 
   setupSocket(io);
+  setupSerial();
+  sendInitialConfig();
   startSyncLoop(io);
 
   app.use("/api", apiRouter);
