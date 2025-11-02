@@ -2,7 +2,6 @@
 import config from "config";
 import { createServer } from "./server.js";
 import { setupGracefulShutdown } from "./shutdown.js";
-import { initDatabase } from "../db/index.js";
 
 export async function bootstrap() {
   console.log("Starting backend...");
@@ -13,7 +12,6 @@ export async function bootstrap() {
   console.log("Initializing modules...");
 
   const port = config.get("server.port");
-  initDatabase();
   httpServer.listen(port, () => {
     console.log(`✅ Backend running on port ${port}`);
   });
