@@ -1,14 +1,16 @@
-// src/core/bootstrap.js
 import config from "config";
 import { createServer } from "./server.js";
+import { initDatabase } from "../db/index.js";
 import { setupGracefulShutdown } from "./shutdown.js";
 
 export async function bootstrap() {
   console.log("Starting backend...");
 
+  // 🧱 Initialize database
+  const db = initDatabase();
+
   const { app, httpServer, io } = createServer(config);
 
-  // Placeholder: initialize DB, serial, sockets here later
   console.log("Initializing modules...");
 
   const port = config.get("server.port");
@@ -17,6 +19,5 @@ export async function bootstrap() {
   });
 
   setupGracefulShutdown(httpServer);
-
-  return { app, io, httpServer };
+  return { app, io, httpServer, db };
 }
