@@ -1,0 +1,33 @@
+### Get all clients
+GET http://localhost:3000/api/clients
+Accept: application/json
+
+### Get single client
+GET http://localhost:3000/api/clients/1
+Accept: application/json
+
+### Start session for PC 1
+POST http://localhost:3000/api/clients/1/start
+Content-Type: application/json
+
+{}
+
+### End session for PC 1
+POST http://localhost:3000/api/clients/1/end
+Content-Type: application/json
+
+{}
+
+### Extend session for PC 1
+POST http://localhost:3000/api/sessions/1/extend
+Content-Type: application/json
+
+{
+  "minutes": 30,
+  "source": "admin",
+  "amount": 5
+}
+
+### Get all transactions
+GET http://localhost:3000/api/transactions
+Accept: application/json
