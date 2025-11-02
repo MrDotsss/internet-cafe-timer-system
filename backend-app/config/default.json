@@ -1,0 +1,15 @@
+{
+  "server": {
+    "port": 3000
+  },
+  "serial": {
+    "port": "COM3",
+    "baudRate": 9600
+  },
+  "database": {
+    "path": "./data/backend.db"
+  },
+  "timing": {
+    "minutesPerCoin": 6
+  }
+}
