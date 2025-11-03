@@ -1,0 +1,11 @@
+### GET CONFIG
+GET http://localhost:3000/api/config/
+Content-Type: application/json
+
+### Update Config
+PATCH http://localhost:3000/api/config/arduino.minutesPerCoin
+Content-Type: application/json
+
+{
+  "value": 6
+}

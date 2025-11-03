@@ -1,0 +1,17 @@
+### GET ALL SESSIONS
+GET http://localhost:3000/api/sessions/
+Content-Type: application/json
+
+### GET REMAINING TIME FOR PC
+GET http://localhost:3000/api/sessions/1/remaining
+Content-Type: application/json
+
+### EXTEND TIME FROM API
+POST http://localhost:3000/api/sessions/1/extend
+Content-Type: application/json
+
+{
+  "minutes": 12,
+  "source": "admin",
+  "amount": 2
+}

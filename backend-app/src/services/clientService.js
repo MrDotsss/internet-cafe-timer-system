@@ -17,16 +17,6 @@ export const ClientService = {
       .get(macAddress);
   },
 
-  create({ name, macAddress, ipAddress }) {
-    const result = db
-      .prepare(
-        `INSERT INTO Clients (name, macAddress, ipAddress, status)
-         VALUES (?, ?, ?, 'idle')`
-      )
-      .run(name, macAddress, ipAddress);
-    return result.lastInsertRowid;
-  },
-
   updateInfo(id, { name, macAddress, ipAddress }) {
     db.prepare(
       `UPDATE Clients
@@ -44,13 +34,19 @@ export const ClientService = {
     ).run(status, id);
   },
 
-  upsert({ name, macAddress, ipAddress }) {
-    const existing = this.getByMac(macAddress);
+  upsert({ id, name, macAddress, ipAddress }) {
+    const existing = this.getById(id);
     if (existing) {
-      this.updateInfo(existing.id, { name, macAddress, ipAddress });
-      return existing.id;
+      // Update info fields only
+      db.prepare(
+        "UPDATE Clients SET name = ?, macAddress = ?, ipAddress = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ?"
+      ).run(name, macAddress, ipAddress, id);
     } else {
-      return this.create({ name, macAddress, ipAddress });
+      // Insert new client with manual id
+      db.prepare(
+        "INSERT INTO Clients (id, name, macAddress, ipAddress, status, createdAt, updatedAt) VALUES (?, ?, ?, ?, 'idle', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)"
+      ).run(id, name, macAddress, ipAddress);
     }
+    return id;
   },
 };

@@ -6,7 +6,7 @@ export function initializeSchema() {
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS Clients (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id INTEGER PRIMARY KEY,
       name TEXT,
       macAddress TEXT UNIQUE,
       ipAddress TEXT,

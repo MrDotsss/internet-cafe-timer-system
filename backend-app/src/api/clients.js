@@ -1,6 +1,7 @@
 import express from "express";
 import { ClientService } from "../services/clientService.js";
 import { SessionService } from "../services/sessionService.js";
+import { sendToArduino } from "../core/serial.js";
 
 const router = express.Router();
 
@@ -35,19 +36,16 @@ router.post("/:id/end", (req, res) => {
   res.json({ success: true });
 });
 
-// 🆕 POST /api/clients
-// Manual add by admin (e.g., through control panel)
+// POST /api/clients - manual add
 router.post("/", (req, res) => {
-  const { name, macAddress, ipAddress } = req.body;
-  if (!macAddress)
-    return res.status(400).json({ error: "macAddress required" });
+  const { id, name, macAddress, ipAddress } = req.body;
+  if (!id) return res.status(400).json({ error: "id required" });
 
-  const id = ClientService.create({ name, macAddress, ipAddress });
-  res.json({ success: true, id });
+  const clientId = ClientService.upsert({ id, name, macAddress, ipAddress });
+  res.json({ success: true, id: clientId });
 });
 
-// 🆕 POST /api/clients/handshake
-// Automatic handshake from client PC
+// POST /api/clients/handshake - automatic handshake
 router.post("/handshake", (req, res) => {
   const { name, macAddress, ipAddress } = req.body;
   if (!macAddress)
