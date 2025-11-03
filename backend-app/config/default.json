@@ -2,14 +2,12 @@
   "server": {
     "port": 3000
   },
-  "serial": {
-    "port": "COM3",
-    "baudRate": 9600
-  },
   "database": {
     "path": "./data/backend.db"
   },
-  "timing": {
+  "arduino": {
+    "port": "COM7",
+    "baudRate": 9600,
     "minutesPerCoin": 6
   }
 }
