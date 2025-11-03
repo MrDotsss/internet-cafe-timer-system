@@ -1,4 +1,3 @@
-// src/services/sessionService.js
 import { getDatabase } from "../db/database.js";
 import { TransactionService } from "./transactionService.js";
 import { ClientService } from "./clientService.js";
@@ -8,20 +7,24 @@ const db = getDatabase();
 
 export const SessionService = {
   startSession(pcId) {
-    // End any active sessions first
+    // End any active sessions
     db.prepare(
       "UPDATE Sessions SET active = 0 WHERE pcId = ? AND active = 1"
     ).run(pcId);
 
-    // Create a new session
+    const now = new Date().toISOString();
     const result = db
       .prepare(
-        `INSERT INTO Sessions (pcId, startUtc, active) VALUES (?, DATETIME('now'), 1)`
+        `INSERT INTO Sessions (pcId, startUtc, expiryUtc, active)
+         VALUES (?, ?, ?, 1)`
       )
-      .run(pcId);
+      .run(pcId, now, now); // expiry initially = start time (no time yet)
 
     const sessionId = result.lastInsertRowid;
+
+    ClientService.updateStatus(pcId, "active");
     SocketEmit.sessionStart(pcId);
+
     console.log(`🕒 Session started for PC ${pcId} (#${sessionId})`);
     return sessionId;
   },
@@ -43,18 +46,35 @@ export const SessionService = {
        WHERE id = ?`
     ).run(endTime, duration, session.id);
 
+    ClientService.updateStatus(pcId, "idle");
     SocketEmit.sessionEnd(pcId);
+
     console.log(`🕒 Session ended for PC ${pcId}, duration ${duration}m`);
     return session.id;
   },
 
   extendSession(pcId, minutes, source = "admin", amount = 0) {
-    const client = ClientService.getById(pcId);
-    const expiry = client.expiryUtc ? new Date(client.expiryUtc) : new Date();
+    const session = db
+      .prepare("SELECT * FROM Sessions WHERE pcId = ? AND active = 1")
+      .get(pcId);
+
+    if (!session) {
+      console.warn(`⚠️ No active session found for PC ${pcId}, starting new.`);
+      this.startSession(pcId);
+      return this.extendSession(pcId, minutes, source, amount);
+    }
+
+    const expiry = session.expiryUtc
+      ? new Date(session.expiryUtc)
+      : new Date(session.startUtc);
     expiry.setMinutes(expiry.getMinutes() + minutes);
 
-    ClientService.updateExpiry(pcId, expiry.toISOString());
-    TransactionService.log(pcId, null, source, amount, minutes);
+    db.prepare("UPDATE Sessions SET expiryUtc = ? WHERE id = ?").run(
+      expiry.toISOString(),
+      session.id
+    );
+
+    TransactionService.log(pcId, session.id, source, amount, minutes);
 
     SocketEmit.sessionExtend(pcId, minutes);
     console.log(`💰 Extended PC ${pcId} by ${minutes} minutes`);

@@ -10,7 +10,6 @@ export function initializeSchema() {
       label TEXT,
       macAddress TEXT,
       status TEXT,
-      expiryUtc TEXT,
       lastSeenUtc TEXT,
       createdAt TEXT DEFAULT CURRENT_TIMESTAMP,
       updatedAt TEXT DEFAULT CURRENT_TIMESTAMP
@@ -21,7 +20,8 @@ export function initializeSchema() {
       pcId INTEGER,
       startUtc TEXT,
       endUtc TEXT,
-      durationMinutes INTEGER,
+      expiryUtc TEXT,
+      durationMinutes INTEGER DEFAULT 0,
       active INTEGER DEFAULT 1,
       FOREIGN KEY (pcId) REFERENCES Clients(id)
     );

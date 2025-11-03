@@ -6,6 +6,6 @@ POST http://localhost:3000/api/arduino/config
 Content-Type: application/json
 
 {
-  "minutesPerCoin": 6,
+  "minutesPerCoin": 1,
   "maxPCs": 15
 }
