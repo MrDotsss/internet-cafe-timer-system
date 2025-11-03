@@ -6,19 +6,27 @@ import { SocketEmit } from "../sockets/socketManager.js";
 const db = getDatabase();
 
 export const SessionService = {
+  /**
+   * Starts a new session only if none is currently active for the PC.
+   */
   startSession(pcId) {
-    // End any active sessions
-    db.prepare(
-      "UPDATE Sessions SET active = 0 WHERE pcId = ? AND active = 1"
-    ).run(pcId);
+    const activeSession = db
+      .prepare("SELECT * FROM Sessions WHERE pcId = ? AND active = 1")
+      .get(pcId);
+
+    if (activeSession) {
+      console.log(`⚠️ Session already active for PC ${pcId}`);
+      return activeSession.id;
+    }
 
     const now = new Date().toISOString();
+
     const result = db
       .prepare(
         `INSERT INTO Sessions (pcId, startUtc, expiryUtc, active)
          VALUES (?, ?, ?, 1)`
       )
-      .run(pcId, now, now); // expiry initially = start time (no time yet)
+      .run(pcId, now, now);
 
     const sessionId = result.lastInsertRowid;
 
@@ -29,11 +37,18 @@ export const SessionService = {
     return sessionId;
   },
 
+  /**
+   * Ends the current active session for a PC.
+   */
   endSession(pcId) {
     const session = db
       .prepare("SELECT * FROM Sessions WHERE pcId = ? AND active = 1")
       .get(pcId);
-    if (!session) return;
+
+    if (!session) {
+      console.warn(`⚠️ No active session found for PC ${pcId}`);
+      return null;
+    }
 
     const endTime = new Date().toISOString();
     const duration = Math.floor(
@@ -53,34 +68,54 @@ export const SessionService = {
     return session.id;
   },
 
+  /**
+   * Extends an active session or starts a new one if none exists.
+   * Always creates a new transaction record.
+   */
   extendSession(pcId, minutes, source = "admin", amount = 0) {
-    const session = db
+    // Ensure there's an active session
+    let session = db
       .prepare("SELECT * FROM Sessions WHERE pcId = ? AND active = 1")
       .get(pcId);
 
     if (!session) {
-      console.warn(`⚠️ No active session found for PC ${pcId}, starting new.`);
-      this.startSession(pcId);
-      return this.extendSession(pcId, minutes, source, amount);
+      console.log(`⚙️ No active session for PC ${pcId}, starting new one.`);
+      const sessionId = this.startSession(pcId);
+      session = db
+        .prepare("SELECT * FROM Sessions WHERE id = ?")
+        .get(sessionId);
     }
 
-    const expiry = session.expiryUtc
+    const newExpiry = session.expiryUtc
       ? new Date(session.expiryUtc)
       : new Date(session.startUtc);
-    expiry.setMinutes(expiry.getMinutes() + minutes);
+    newExpiry.setMinutes(newExpiry.getMinutes() + minutes);
 
     db.prepare("UPDATE Sessions SET expiryUtc = ? WHERE id = ?").run(
-      expiry.toISOString(),
+      newExpiry.toISOString(),
       session.id
     );
 
     TransactionService.log(pcId, session.id, source, amount, minutes);
-
     SocketEmit.sessionExtend(pcId, minutes);
-    console.log(`💰 Extended PC ${pcId} by ${minutes} minutes`);
+
+    console.log(
+      `💰 Extended session for PC ${pcId} by ${minutes} minutes (new expiry: ${newExpiry.toISOString()})`
+    );
+
+    return session.id;
   },
 
-  getActiveSessions() {
+  /**
+   * Retrieves all currently active sessions.
+   */
+  getAllActiveSessions() {
     return db.prepare("SELECT * FROM Sessions WHERE active = 1").all();
+  },
+
+  getActiveSession(pcId) {
+    return db
+      .prepare("SELECT * FROM Sessions WHERE pcId = ? AND active = 1")
+      .get(pcId);
   },
 };

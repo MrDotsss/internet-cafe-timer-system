@@ -1,26 +1,33 @@
-// src/core/syncLoop.js
 import { ClientService } from "../services/clientService.js";
+import { SessionService } from "../services/sessionService.js";
 import { SocketEmit } from "../sockets/socketManager.js";
 
 export function startSyncLoop(io) {
   console.log("🔁 Sync loop started");
 
   setInterval(() => {
-    const clients = ClientService.getAll();
+    const activeSessions = SessionService.getAllActiveSessions();
     const now = new Date();
 
-    clients.forEach((client) => {
-      if (client.expiryUtc) {
-        const expiry = new Date(client.expiryUtc);
-        if (expiry <= now && client.status !== "expired") {
-          ClientService.updateStatus(client.id, "expired");
-          SocketEmit.clientExpired(client.id);
-          io.emit("client:expired", { id: client.id });
-          console.log(`⏰ PC ${client.label || client.id} expired`);
-        }
+    activeSessions.forEach((session) => {
+      if (!session.expiryUtc) return;
+
+      const expiry = new Date(session.expiryUtc);
+
+      if (expiry <= now) {
+        // End session if expired
+        SessionService.endSession(session.pcId);
+
+        // ClientService.updateStatus is already called inside endSession
+        SocketEmit.clientExpired(session.pcId);
+        io.emit("client:expired", { id: session.pcId });
+
+        console.log(`⏰ Session for PC ${session.pcId} expired automatically`);
       }
     });
 
-    io.emit("clients:update", clients);
+    // Broadcast all clients
+    const allClients = ClientService.getAll();
+    io.emit("clients:update", allClients);
   }, 1000 * 30); // every 30s
 }

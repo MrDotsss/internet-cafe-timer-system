@@ -6,11 +6,25 @@ Accept: application/json
 GET http://localhost:3000/api/clients/1
 Accept: application/json
 
+### Add Client
+POST http://localhost:3000/api/clients/
+Content-Type: application/json
+
+{
+  "name": "PC-02",
+  "macAddress": "AB:BC:CD:DE",
+  "ipAddress": "192.168.1.102"
+}
+
 ### Start session for PC 1
 POST http://localhost:3000/api/clients/1/start
 Content-Type: application/json
 
 {}
+
+### Get active sessions
+GET http://localhost:3000/api/sessions/1/remaining
+Content-Type: application/json
 
 ### End session for PC 1
 POST http://localhost:3000/api/clients/1/end

@@ -7,10 +7,10 @@ export function initializeSchema() {
   db.exec(`
     CREATE TABLE IF NOT EXISTS Clients (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      label TEXT,
-      macAddress TEXT,
-      status TEXT,
-      lastSeenUtc TEXT,
+      name TEXT,
+      macAddress TEXT UNIQUE,
+      ipAddress TEXT,
+      status TEXT DEFAULT 'offline',
       createdAt TEXT DEFAULT CURRENT_TIMESTAMP,
       updatedAt TEXT DEFAULT CURRENT_TIMESTAMP
     );
