@@ -1,4 +1,5 @@
 import { getDatabase } from "../db/database.js";
+import { SocketEmit } from "../sockets/socketManager.js";
 
 const db = getDatabase();
 
@@ -47,6 +48,8 @@ export const ClientService = {
         "INSERT INTO Clients (id, name, macAddress, ipAddress, status, createdAt, updatedAt) VALUES (?, ?, ?, ?, 'idle', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)"
       ).run(id, name, macAddress, ipAddress);
     }
+
+    SocketEmit.clientJoin(id);
     return id;
   },
 };

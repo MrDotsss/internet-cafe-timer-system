@@ -1,6 +1,5 @@
 // src/sockets/socketManager.js
 import { SOCKET_EVENTS } from "./events.js";
-import { ClientService } from "../services/clientService.js";
 
 let ioInstance = null;
 
@@ -30,6 +29,10 @@ export function setupSocket(io) {
  * Emit helpers — triggered by services (admin actions, Arduino, expiry)
  */
 export const SocketEmit = {
+  clientJoin(client) {
+    ioInstance?.emit(SOCKET_EVENTS.CLIENT_JOIN, client);
+  },
+
   clientUpdate(client) {
     ioInstance?.emit(SOCKET_EVENTS.CLIENT_UPDATE, client);
   },

@@ -20,7 +20,6 @@ export function startSyncLoop(io) {
 
         // ClientService.updateStatus is already called inside endSession
         SocketEmit.clientExpired(session.pcId);
-        io.emit("client:expired", { id: session.pcId });
 
         console.log(`⏰ Session for PC ${session.pcId} expired automatically`);
       }
@@ -28,6 +27,6 @@ export function startSyncLoop(io) {
 
     // Broadcast all clients
     const allClients = ClientService.getAll();
-    io.emit("clients:update", allClients);
+    SocketEmit.clientUpdate(allClients);
   }, 1000 * 30); // every 30s
 }

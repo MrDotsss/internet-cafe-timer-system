@@ -1,23 +1,23 @@
 ### GET ALL CLIENTS
-GET http://localhost:3000/api/clients/
+GET http://localhost:8080/api/clients/
 Content-Type: application/json
 
 ### GET SPECIFIC CLIENT
-GET http://localhost:3000/api/clients/1
+GET http://localhost:8080/api/clients/1
 Content-Type: application/json
 
 ### END CLIENT SESSION
-POST http://localhost:3000/api/clients/1/end
+POST http://localhost:8080/api/clients/1/end
 Content-Type: application/json
 
 ### ADD CLIENT 
-POST http://localhost:3000/api/clients
+POST http://localhost:8080/api/clients
 Content-Type: application/json
 
 {
-  "id": 1,
-  "name": "PC-01",
-  "macAddress": "01:00:00:00",
-  "ipAddress": "192.168.1.101"
+  "id": 3,
+  "name": "PC-03",
+  "macAddress": "0C:00:00:00",
+  "ipAddress": "192.168.1.103"
 }
 
