@@ -8,18 +8,3 @@
 // @use 'vuetify/settings' with (
 //   $color-pack: false
 // );
-
-@use "vuetify/settings" with (
-  $utilities: (
-    "aspect-ratio": (
-      property: aspect-ratio,
-      class: aspr,
-      responsive: true,
-      values: (
-        square: calc(1 / 1),
-        hd: calc(16 / 9),
-        standard: calc(4 / 3),
-      ),
-    ),
-  )
-);

@@ -1,110 +1,143 @@
 <template>
   <v-card
-    class="d-flex flex-wrap aspr-square border-md align-center justify-center"
-    min-width="192px"
-    variant="flat"
-    :color="statusColors[pcData.status]"
+    class="text-center"
+    min-width="200"
+    color="error"
+    variant="outlined"
+    style="aspect-ratio: 1"
   >
-    <v-card-item>
-      <v-card-title>{{ pcData.name }}</v-card-title>
-      <v-card-subtitle
-        ><v-chip variant="outlined">{{
-          pcData.status.toUpperCase()
-        }}</v-chip></v-card-subtitle
-      >
-    </v-card-item>
-    <v-card-actions class="d-flex justify-center flex-1-1-100 bg-surface-light">
-      <v-btn @click="reveal = true">Control</v-btn>
+    <v-card-title>PC-01</v-card-title>
+    <v-card-subtitle>
+      <v-icon size="x-large" color="error">mdi-monitor-off</v-icon>
+    </v-card-subtitle>
+    <v-card-text> <v-chip color="red">OFFLINE</v-chip></v-card-text>
+    <v-card-actions>
+      <v-btn
+        color="primary"
+        text="Controls"
+        variant="text"
+        @click="reveal = true"
+      ></v-btn>
     </v-card-actions>
 
     <v-expand-transition>
       <v-card
         v-if="reveal"
-        class="position-absolute w-100 border-md"
+        class="position-absolute w-100"
         height="100%"
         style="bottom: 0"
       >
-        <v-card-actions>
-          <v-btn @click="reveal = false">Close</v-btn>
+        <v-card-text class="d-flex flex-wrap ga-2">
+          <v-btn
+            v-for="actions in sessionActions"
+            @click="
+              () => {
+                reveal = false;
+                actions.action();
+              }
+            "
+            v-tooltip:bottom="actions.tooltip"
+            :icon="actions.icon"
+            :color="actions.color"
+          ></v-btn>
+          <v-divider></v-divider>
+          <v-btn
+            v-for="actions in powerActions"
+            @click="
+              () => {
+                reveal = false;
+                actions.action();
+              }
+            "
+            v-tooltip:bottom="actions.tooltip"
+            :icon="actions.icon"
+            :color="actions.color"
+          ></v-btn>
+        </v-card-text>
+        <v-card-actions class="pt-0">
+          <v-btn
+            color="teal-accent-4"
+            text="Close"
+            variant="text"
+            @click="reveal = false"
+          ></v-btn>
         </v-card-actions>
-        <div class="d-flex align-center justify-center ga-2">
-          <v-btn
-            @click="reveal = false"
-            icon="mdi-power-settings"
-            color="info"
-            v-tooltip:bottom="'Wake On Lan'"
-          >
-          </v-btn>
-          <v-btn
-            @click="reveal = false"
-            icon="mdi-power"
-            color="red"
-            v-tooltip:bottom="'Power Off'"
-          >
-          </v-btn>
-          <v-btn
-            @click="reveal = false"
-            icon="mdi-restart"
-            color="warning"
-            v-tooltip:bottom="'Reboot'"
-          >
-          </v-btn>
-        </div>
-        <v-divider class="ma-3"></v-divider>
-        <div class="d-flex align-center justify-center ga-2">
-          <v-btn
-            @click="reveal = false"
-            icon="mdi-account-cowboy-hat"
-            color="grey"
-            v-tooltip:bottom="'Start Admin'"
-          >
-          </v-btn>
-          <v-btn
-            @click="reveal = false"
-            icon="mdi-account-clock"
-            color="blue"
-            v-tooltip:bottom="'Open Session'"
-          >
-          </v-btn>
-          <v-btn
-            @click="reveal = false"
-            icon="mdi-cash-multiple"
-            color="warning"
-            v-tooltip:bottom="'Start Session'"
-          >
-          </v-btn>
-        </div>
       </v-card>
     </v-expand-transition>
   </v-card>
 </template>
-
 <script setup>
 import { ref, watch } from "vue";
 
-const reveal = ref(false);
-const timeOutID = ref(null);
-
 const props = defineProps({
-  pcData: {
+  pcInfo: {
     type: Object,
     required: true,
   },
 });
 
-const statusColors = {
-  active: "success",
-  idle: "info",
-  runningOut: "warning",
-};
+const reveal = ref(false);
+let timeoutId;
 
-watch(reveal, async (newReveal, oldReveal) => {
-  if (newReveal) {
-    timeOutID.value = setTimeout(() => {
-      reveal.value = false;
-    }, 3000);
+watch(reveal, (val) => {
+  if (val) {
+    timeoutId = setTimeout(() => (reveal.value = false), 3000);
   } else {
-    clearTimeout(timeOutID.value);
+    clearTimeout(timeoutId);
   }
 });
+
+const sessionActions = [
+  {
+    tooltip: "Start Admin",
+    icon: "mdi-account-cowboy-hat",
+    color: "grey",
+    action: function () {
+      console.log(`${pcInfo.name} says ${this.tooltip}`);
+    },
+  },
+  {
+    tooltip: "Start Session",
+    icon: "mdi-timer-check",
+    color: "success",
+    action: function () {
+      console.log(`${pcInfo.name} says ${this.tooltip}`);
+    },
+  },
+  {
+    tooltip: "Stop Session",
+    icon: "mdi-timer-stop",
+    color: "error",
+    action: function () {
+      console.log(`${pcInfo.name} says ${this.tooltip}`);
+    },
+  },
+];
+
+const powerActions = [
+  {
+    tooltip: "Power On",
+    icon: "mdi-power-settings",
+    color: "success",
+    action: function () {
+      console.log(`${pcInfo.name} says ${this.tooltip}`);
+    },
+  },
+  {
+    tooltip: "Reboot",
+    icon: "mdi-restart",
+    color: "warning",
+    action: function () {
+      console.log(`${pcInfo.name} says ${this.tooltip}`);
+    },
+  },
+  {
+    tooltip: "Power Off",
+    icon: "mdi-power",
+    color: "error",
+    action: function () {
+      console.log(`${pcInfo.name} says ${this.tooltip}`);
+    },
+  },
+];
 </script>
